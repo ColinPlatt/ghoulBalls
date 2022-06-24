@@ -1,4 +1,4 @@
-solmate/=lib/solmate/src/
 ds-test/=lib/solmate/lib/ds-test/src/
-solidity-trigonometry/=lib/solidity-trigonometry/src/
 forge-std/=lib/forge-std/src/
+solidity-trigonometry/=lib/solidity-trigonometry/src/
+solmate/=lib/solmate/src/

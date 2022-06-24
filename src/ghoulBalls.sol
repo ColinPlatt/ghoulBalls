@@ -16,7 +16,7 @@ contract ghoulBalls is ERC721, Owned(msg.sender) {
     uint32 constant WIDTH_AND_HEIGHT = 128;
     int256 constant CIRCLE_RADIUS = 69;
 
-    IBasedGhouls ghouls;
+    IBasedGhouls ghouls = IBasedGhouls(0xeF1a89cbfAbE59397FfdA11Fc5DF293E9bC5Db90);
 
     mapping(uint256 => bytes) internal colours;
 
@@ -52,16 +52,10 @@ contract ghoulBalls is ERC721, Owned(msg.sender) {
     }
 
     function mint_the_ball(uint256 id) public {
-        require(ghouls.ownerOf(id) == msg.sender, "not your ghoul.");
-        require(_ownerOf[id] == address(0), "someone else got this ghoulBall.");
-
-        colours[id] = _generateColour(id);
-
-        _mint(msg.sender, id);
-    }
-
-    // remove before mainnet deployment
-    function openMint(uint256 id) public {
+        require(id < 10000, "invalid ball.");
+        if (id<6666) {
+            require(ghouls.ownerOf(id) == msg.sender, "not your ghoul.");
+        }
         require(_ownerOf[id] == address(0), "someone else got this ghoulBall.");
 
         colours[id] = _generateColour(id);
@@ -148,7 +142,8 @@ contract ghoulBalls is ERC721, Owned(msg.sender) {
         );
     }
 
-    function setGhoulAddr(address ghoulAddr) public onlyOwner {
+    //never know if they'll rug us again with a v3
+    function updateGhoulAddr(address ghoulAddr) public onlyOwner {
         ghouls = IBasedGhouls(ghoulAddr);
     }
     
