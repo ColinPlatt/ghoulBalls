@@ -1,7 +1,12 @@
-//SPDX-License-Identifier: MIT
+//SPDX-License-Identifier: Unlicense
+/*
+ * @title ERC721 JSON metadata
+ * @author Colin Platt <colin@numerate.tech>
+ *
+ * @dev JSON utilities for base64 encoded ERC721 JSON metadata schema
+ */
 pragma solidity ^0.8.12;
 
-// JSON utilities for base64 encoded ERC721 JSON metadata scheme
 library json {
     
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -113,11 +113,10 @@ contract ghoulBalls is ERC721, Owned(msg.sender) {
                 json._attr(
                     string.concat('ball ', json.toString(i+1)),
                     string.concat(
-                        'R: ',
                         json.toString(uint8(plte[i*3])),
-                        ' G: ',
+                        ', ',
                         json.toString(uint8(plte[i*3+1])),
-                        ' B: ',
+                        ', ',
                         json.toString(uint8(plte[i*3+2]))
                     ),
                     last
@@ -136,7 +135,7 @@ contract ghoulBalls is ERC721, Owned(msg.sender) {
     function tokenURI(uint256 id) public view override returns (string memory) {
         return json.formattedMetadata(
             'ghoulBalls',
-            "ghoulBalls are fully onchain PNGs that evolve with every block. No roadmap, no development, no marketing, they promise nothing and deliver even less. They're just PNGs.",
+            "ghoulBalls are fully onchain PNGs that evolve with every block, absolutely rugging the right-click savers after everyblock. No roadmap, no development, no utility, no marketing, and nothing more. They promise nothing and deliver even less. They're just PNGs.",
             tokenPNG(id),
             tokenAttributes(id)
         );

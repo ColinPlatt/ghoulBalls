@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
 library libImg {
@@ -86,82 +86,6 @@ library libImg {
         
         return tempImg.pixels;
 
-    }
-
-    
-
-
-
-    function rasterCircle(int256 xMid, int256 yMid, int256 r, uint256 imgWidth, bytes1 idxColour) internal pure returns (bytes memory) {
-        bytes memory pixels = new bytes((imgWidth+1) * imgWidth);
-
-        int256 f = 1 - int(r);
-        int256 ddF_x = 0;
-        int256 ddF_y = -2 * int(r);
-        int x = 0;
-        int y = int(r);
-
-        unchecked {
-            pixels[toIndex(xMid, yMid+r,imgWidth)] = idxColour;
-            pixels[toIndex(xMid, yMid-r,imgWidth)] = idxColour;
-            pixels[toIndex(xMid+r, yMid,imgWidth)] = idxColour;
-            pixels[toIndex(xMid-r, yMid,imgWidth)] = idxColour;
-
-            while (x<y) {
-                if (f >= 0) {
-                    y--;
-                    ddF_y += 2;
-                    f += ddF_y;
-                }
-                x++;
-                ddF_x += 2;
-                f += ddF_x;
-                pixels[toIndex(xMid+x, yMid+y,imgWidth)] = idxColour;
-                pixels[toIndex(xMid-x, yMid+y,imgWidth)] = idxColour;
-                pixels[toIndex(xMid+x, yMid-y,imgWidth)] = idxColour;
-                pixels[toIndex(xMid-x, yMid-y,imgWidth)] = idxColour;
-
-                pixels[toIndex(xMid+y, yMid+x,imgWidth)] = idxColour;
-                pixels[toIndex(xMid-y, yMid+x,imgWidth)] = idxColour;
-                pixels[toIndex(xMid+y, yMid-x,imgWidth)] = idxColour;
-                pixels[toIndex(xMid-y, yMid-x,imgWidth)] = idxColour;
-            }
-        }
-        return pixels;
-    }
-
-    function rasterFilledCircle(int256 xMid, int256 yMid, int256 r, uint256 imgWidth, bytes1 idxColour) internal pure returns (bytes memory) {
-        bytes memory pixels = new bytes((imgWidth+1) * imgWidth);
-
-        int256 xSym;
-        int256 ySym;
-        int256 x = 0;
-        int256 y = int(r);
-
-        unchecked {
-            for (x = xMid - r ; x <= xMid; x++) {
-                for (y = yMid - r ; y <= yMid; y++) {
-                    if ((x - xMid)*(x - xMid) + (y - yMid)*(y - yMid) <= r*r) {
-                        xSym = xMid - (x - xMid);
-                        ySym = yMid - (y - yMid);
-                        // (x, y), (x, ySym), (xSym , y), (xSym, ySym) are in the circle
-                        if (x >= 0 && y >= 0) {
-                            pixels[toIndex(x, y,imgWidth)] = idxColour;
-                        }
-                        if (x >= 0 && ySym >= 0) {
-                            pixels[toIndex(x, ySym,imgWidth)] = idxColour;
-                        }
-                        if (xSym >= 0 && y >= 0) {
-                            pixels[toIndex(xSym, y,imgWidth)] = idxColour;
-                        }
-                        if (xSym >= 0 && ySym >= 0) {
-                            pixels[toIndex(xSym, ySym,imgWidth)] = idxColour;
-                        }
-                    }
-                }
-            }
-        }
-        return pixels;
     }
 
 }
