@@ -106,11 +106,10 @@ library libImg {
         unchecked {
             int256[] memory xMid = new int256[](circleCount);
             int256[] memory yMid = new int256[](circleCount);
-            uint256[] memory randoSeed = new uint256[](circleCount);
 
             for (uint8 i = 0; i<circleCount; i++) {
-                randoSeed[i] = uint256(keccak256(abi.encodePacked(block.timestamp, i)));
-                (xMid[i], yMid[i]) = assignMidPoint(randoSeed[i], img.width, img.height);
+                uint256 randoSeed = uint256(keccak256(abi.encodePacked(block.timestamp, i)));
+                (xMid[i], yMid[i]) = assignMidPoint(randoSeed, img.width, img.height);
             }
 
             for(uint256 frameNum = 0; frameNum < 12; ++frameNum) {

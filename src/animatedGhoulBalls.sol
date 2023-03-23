@@ -143,8 +143,8 @@ contract animatedGhoulBalls is ERC721, Owned(msg.sender) {
 
     function tokenURI(uint256 id) public view override returns (string memory) {
         return json.formattedMetadata(
-            'ghoulBalls',
-            "ghoulBalls are fully onchain, animated PNGs that evolve with every block, absolutely rugging the right-click savers after everyblock. No roadmap, no development, no utility, no marketing, and nothing more. They promise nothing and deliver even less. They're just PNGs.",
+            'animatedGhoulBalls',
+            "animatedGhoulBalls are fully onchain, animated PNGs that evolve with every block, absolutely rugging the right-click savers after everyblock. No roadmap, no development, no utility, no marketing, and nothing more. They promise nothing and deliver even less. They're just _animated_ PNGs.",
             tokenPNG(id),
             tokenAttributes(id)
         );
@@ -155,6 +155,10 @@ contract animatedGhoulBalls is ERC721, Owned(msg.sender) {
         ghouls = IBasedGhouls(ghoulAddr);
     }
     
-    constructor() ERC721("animatedGhoulBalls", unicode"📍"){}
+    constructor() ERC721("animatedGhoulBalls", unicode"📍"){
+        colours[6666] = _generateColour(6666);
+
+        _mint(msg.sender, 6666);
+    }
 
 }

@@ -53,7 +53,7 @@ library json {
                             'data:image/svg+xml;base64,',
                             encode(
                                 bytes(string.concat(
-                                    '<svg width="100%" height="100%" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">  <image x="0" y="0" width="128" height="128" preserveAspectRatio="xMidYMid" xlink:href="',
+                                    '<svg viewBox="0 0 384 384" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">  <image width="384" height="384" image-rendering="pixelated" xlink:href="',
                                     _pngImg,
                                     '"/></svg>'
                                 ))

@@ -3,12 +3,12 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
 
-import "../src/ghoulBalls.sol";
+import "../src/animatedGhoulBalls.sol";
 
 
 import {MockERC721} from "solmate/test/utils/mocks/MockERC721.sol";
 
-contract ghoulBallsTest is Test {
+contract animatedGhoulBallsTest is Test {
     MockERC721 mockNFT;
     animatedGhoulBalls nft;
     
@@ -38,5 +38,12 @@ contract ghoulBallsTest is Test {
         nft.mint_the_ball(1);
         string memory uriOutput = nft.tokenPNG(1);
         vm.writeFile(string.concat('test/output/test_uri1.txt'), uriOutput);
+
+        vm.warp(block.timestamp + 200);
+
+        string memory uriOutput2 = nft.tokenPNG(1);
+        vm.writeFile(string.concat('test/output/test_uri2.txt'), uriOutput2);
+
+        assertEq(uriOutput, uriOutput2);
     }
 }
