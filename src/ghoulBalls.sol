@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
 import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Owned} from "solmate/auth/Owned.sol";
@@ -11,10 +11,10 @@ interface IBasedGhouls {
     function ownerOf(uint256 id) external view returns (address owner);
 }
 
-contract ghoulBalls is ERC721, Owned(msg.sender) {
+contract animatedGhoulBalls is ERC721, Owned(msg.sender) {
 
-    uint32 constant WIDTH_AND_HEIGHT = 128;
-    int256 constant CIRCLE_RADIUS = 69;
+    uint32 constant WIDTH_AND_HEIGHT = 64;
+    int256 constant CIRCLE_RADIUS = 30;
 
     IBasedGhouls ghouls = IBasedGhouls(0xeF1a89cbfAbE59397FfdA11Fc5DF293E9bC5Db90);
 
@@ -64,6 +64,7 @@ contract ghoulBalls is ERC721, Owned(msg.sender) {
     }
 
     function click_for_utility(uint256 id) public {
+        require(ownerOf(id) == msg.sender, "not your ghoulBall.");
         _burn(id);
     }
 
@@ -135,7 +136,7 @@ contract ghoulBalls is ERC721, Owned(msg.sender) {
     function tokenURI(uint256 id) public view override returns (string memory) {
         return json.formattedMetadata(
             'ghoulBalls',
-            "ghoulBalls are fully onchain PNGs that evolve with every block, absolutely rugging the right-click savers after everyblock. No roadmap, no development, no utility, no marketing, and nothing more. They promise nothing and deliver even less. They're just PNGs.",
+            "ghoulBalls are fully onchain, and animated PNGs that evolve with every block, absolutely rugging the right-click savers after everyblock. No roadmap, no development, no utility, no marketing, and nothing more. They promise nothing and deliver even less. They're just PNGs.",
             tokenPNG(id),
             tokenAttributes(id)
         );
@@ -146,6 +147,6 @@ contract ghoulBalls is ERC721, Owned(msg.sender) {
         ghouls = IBasedGhouls(ghoulAddr);
     }
     
-    constructor() ERC721("ghoulBalls", unicode"🎊"){}
+    constructor() ERC721("animatedGhoulBalls", unicode"📍"){}
 
 }
