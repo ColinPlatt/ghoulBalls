@@ -8,3 +8,6 @@
 [submodule "lib/solidity-trigonometry"]
 	path = lib/solidity-trigonometry
 	url = https://github.com/mds1/solidity-trigonometry
+[submodule "lib/openzeppelin-contracts"]
+	path = lib/openzeppelin-contracts
+	url = https://github.com/Openzeppelin/openzeppelin-contracts

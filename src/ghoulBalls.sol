@@ -52,10 +52,8 @@ contract animatedGhoulBalls is ERC721, Owned(msg.sender) {
     }
 
     function mint_the_ball(uint256 id) public {
-        require(id < 10000, "invalid ball.");
-        if (id<6666) {
-            require(ghouls.ownerOf(id) == msg.sender, "not your ghoul.");
-        }
+        require(id < 6666, "invalid ball.");
+        require(ghouls.ownerOf(id) == msg.sender, "not your ghoul.");
         require(_ownerOf[id] == address(0), "someone else got this ghoulBall.");
 
         colours[id] = _generateColour(id);
@@ -63,7 +61,7 @@ contract animatedGhoulBalls is ERC721, Owned(msg.sender) {
         _mint(msg.sender, id);
     }
 
-    function click_for_utility(uint256 id) public {
+    function tap_for_utility(uint256 id) public {
         require(ownerOf(id) == msg.sender, "not your ghoulBall.");
         _burn(id);
     }
@@ -90,13 +88,23 @@ contract animatedGhoulBalls is ERC721, Owned(msg.sender) {
     function tokenPNG(uint256 id) public view returns (string memory) {
         bytes3[] memory _palette = getPalette(id);
 
+        bytes memory blankFrame = new bytes(WIDTH_AND_HEIGHT * (WIDTH_AND_HEIGHT+1));
+
+        png.FRAME[] memory imgFrames = new png.FRAME[](12);
+
+        unchecked {
+            for(uint256 i = 0; i<12; ++i) {
+                imgFrames[i].frame = blankFrame;
+            }
+        }
+
         libImg.IMAGE memory imgPixels = libImg.IMAGE(
             WIDTH_AND_HEIGHT,
             WIDTH_AND_HEIGHT,
-            new bytes(WIDTH_AND_HEIGHT*WIDTH_AND_HEIGHT+1)
+            imgFrames
         );
         
-        return png.encodedPNG(WIDTH_AND_HEIGHT, WIDTH_AND_HEIGHT, _palette, libImg.drawImage(imgPixels, _palette.length), true);
+        return png.encodedAPNG(WIDTH_AND_HEIGHT, WIDTH_AND_HEIGHT, _palette, libImg.drawImage(imgPixels, _palette.length));
 
     }
 
@@ -136,7 +144,7 @@ contract animatedGhoulBalls is ERC721, Owned(msg.sender) {
     function tokenURI(uint256 id) public view override returns (string memory) {
         return json.formattedMetadata(
             'ghoulBalls',
-            "ghoulBalls are fully onchain, and animated PNGs that evolve with every block, absolutely rugging the right-click savers after everyblock. No roadmap, no development, no utility, no marketing, and nothing more. They promise nothing and deliver even less. They're just PNGs.",
+            "ghoulBalls are fully onchain, animated PNGs that evolve with every block, absolutely rugging the right-click savers after everyblock. No roadmap, no development, no utility, no marketing, and nothing more. They promise nothing and deliver even less. They're just PNGs.",
             tokenPNG(id),
             tokenAttributes(id)
         );

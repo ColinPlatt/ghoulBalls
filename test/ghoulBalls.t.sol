@@ -10,12 +10,12 @@ import {MockERC721} from "solmate/test/utils/mocks/MockERC721.sol";
 
 contract ghoulBallsTest is Test {
     MockERC721 mockNFT;
-    ghoulBalls nft;
+    animatedGhoulBalls nft;
     
     function setUp() public {
         vm.warp(1656059716);
         mockNFT = new MockERC721("BasedGhouls", "BasedGhouls");
-        nft = new ghoulBalls();
+        nft = new animatedGhoulBalls();
         nft.updateGhoulAddr(address(mockNFT));
         mockNFT.mint(address(this), 1);
     }
@@ -26,21 +26,17 @@ contract ghoulBallsTest is Test {
         assertEq(nft.balanceOf(address(this)), 1);
     }
 
-    function testOpenMinting() public {
-        nft.mint_the_ball(6667);
-        assertEq(nft.ownerOf(6667), address(this));
-        assertEq(nft.balanceOf(address(this)), 1);
-    }
-
     function testBadMinting() public {
         mockNFT.mint(address(this), 6665);
 
         vm.startPrank(address(1337));
+        vm.expectRevert("not your ghoul.");
         nft.mint_the_ball(6665);
     }
 
-    function _testUri() public {
+    function testUri() public {
         nft.mint_the_ball(1);
-        emit log_string(nft.tokenURI(1));
+        string memory uriOutput = nft.tokenPNG(1);
+        vm.writeFile(string.concat('test/output/test_uri1.txt'), uriOutput);
     }
 }

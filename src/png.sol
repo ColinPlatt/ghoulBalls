@@ -1,12 +1,12 @@
  // SPDX-License-Identifier: Unlicense
 /*
  * @title Onchain PNGs
- * @author Colin Platt <colin@numerate.tech>
+ * @author Colin Platt
  *
  * @dev PNG encoding tools written in Solidity for producing read-only onchain PNG files.
  */
 
-pragma solidity =0.8.13;
+pragma solidity ^0.8.13;
 
 library png {
     
@@ -14,6 +14,14 @@ library png {
         bytes1 red;
         bytes1 green;
         bytes1 blue;
+    }
+
+    struct FRAME {
+        bytes frame;
+    }
+
+    function rgbToPalette(uint8 red, uint8 green, uint8 blue) internal pure returns (bytes3) {
+        return bytes3(abi.encodePacked(red, green, blue));
     }
 
     function rgbToPalette(bytes1 red, bytes1 green, bytes1 blue) internal pure returns (bytes3) {
@@ -42,12 +50,14 @@ library png {
         uint256 depth = _8bit? uint256(256) : calculateBitDepth(_palette.length);
         bytes memory paletteObj;
 
-        for (uint i = 0; i<_palette.length; i++) {
-            paletteObj = abi.encodePacked(paletteObj, _palette[i]);
-        }
+        unchecked{ 
+            for (uint i = 0; i<_palette.length; i++) {
+                paletteObj = abi.encodePacked(paletteObj, _palette[i]);
+            }
 
-        for (uint i = _palette.length; i<depth-1; i++) {
-            paletteObj = abi.encodePacked(paletteObj, bytes3(0x000000));
+            for (uint i = _palette.length; i<depth-1; i++) {
+                paletteObj = abi.encodePacked(paletteObj, bytes3(0x000000));
+            }
         }
 
         return abi.encodePacked(
@@ -62,12 +72,14 @@ library png {
 
         bytes memory tRNSObj = abi.encodePacked(bytes1(0x00));
 
-        for (uint i = 0; i<_palette; i++) {
-            tRNSObj = abi.encodePacked(tRNSObj, bytes1(0xFF));
-        }
+        unchecked{ 
+            for (uint i = 0; i<_palette; i++) {
+                tRNSObj = abi.encodePacked(tRNSObj, bytes1(0xFF));
+            }
 
-        for (uint i = _palette; i<_bitDepth-1; i++) {
-            tRNSObj = abi.encodePacked(tRNSObj, bytes1(0x00));
+            for (uint i = _palette; i<_bitDepth-1; i++) {
+                tRNSObj = abi.encodePacked(tRNSObj, bytes1(0x00));
+            }
         }
 
         return abi.encodePacked(
@@ -77,18 +89,13 @@ library png {
         );
     }
 
+
     function rawPNG(uint32 width, uint32 height, bytes3[] memory palette, bytes memory pixels, bool force8bit) internal pure returns (bytes memory) {
 
         uint256[256] memory crcTable = calcCrcTable();
 
         // Write PLTE
         bytes memory plte = formatPalette(palette, force8bit);
-
-        // Write tRNS
-        bytes memory tRNS = png._tRNS(
-            force8bit ? 256 : calculateBitDepth(palette.length),
-            palette.length
-            );
 
         // Write IHDR
         bytes21 header = bytes21(abi.encodePacked(
@@ -99,6 +106,13 @@ library png {
                 bytes5(0x0803000000)
             )
         );
+
+        // Write tRNS
+        bytes memory tRNS = png._tRNS(
+            force8bit ? 256 : calculateBitDepth(palette.length),
+            palette.length
+            );
+
 
         bytes7 deflate = bytes7(
             abi.encodePacked(
@@ -127,35 +141,245 @@ library png {
 
     }
 
+    function rawPNG(uint32 width, uint32 height, bytes memory plte, bytes memory pixels, bool force8bit) internal pure returns (bytes memory) {
+
+        uint256[256] memory crcTable = calcCrcTable();
+
+        // Write IHDR
+        bytes21 header = bytes21(abi.encodePacked(
+                uint32(13),
+                'IHDR',
+                width,
+                height,
+                bytes5(0x0803000000)
+            )
+        );    
+
+        // Write tRNS
+        bytes memory tRNS = png._tRNS(
+            force8bit ? 256 : calculateBitDepth(plte.length / 3),
+            plte.length / 3
+            );
+    
+
+        bytes7 deflate = bytes7(
+            abi.encodePacked(
+                bytes2(0x78DA), //trying to adapt, was 78DA
+                pixels.length > 65535 ? bytes1(0x00) :  bytes1(0x01),
+                png.byte2lsb(uint16(pixels.length)),
+                ~png.byte2lsb(uint16(pixels.length))
+            )
+        );
+
+        bytes memory zlib = abi.encodePacked('IDAT', deflate, pixels, _adler32(pixels));
+
+        return abi.encodePacked(
+            bytes8(0x89504E470D0A1A0A),
+            header, 
+            _CRC(crcTable, abi.encodePacked(header),4),
+            plte, 
+            _CRC(crcTable, abi.encodePacked(plte),4),
+            tRNS, 
+            _CRC(crcTable, abi.encodePacked(tRNS),4),
+            uint32(zlib.length-4),
+            zlib,
+            _CRC(crcTable, abi.encodePacked(zlib), 0), 
+            bytes12(0x0000000049454E44AE426082)
+        );
+
+    }
+
+    function _acTL(uint256[256] memory crcTable, uint256 _numFrames) internal pure returns (bytes memory) {
+
+        bytes memory acTL = abi.encodePacked(
+            bytes4(0x00000008),
+            'acTL',
+            uint32(_numFrames),
+            bytes4(0)
+        );
+
+        return bytes.concat(
+            acTL,
+            _CRC(crcTable, abi.encodePacked(acTL),4)
+        );
+    }
+
+    function _fcTL(uint256[256] memory crcTable, uint256 _seqNum, uint256 _width, uint256 _height, uint256 _time) internal pure returns (bytes memory) {
+
+        bytes memory fcTL = abi.encodePacked(
+            bytes4(0x00_00_00_1A),
+            'fcTL',
+            uint32(_seqNum),
+            uint32(_width),
+            uint32(_height),
+            uint48(0),
+            uint32(_time),
+            bytes4(0x00_64_00_00)
+        );
+
+        return bytes.concat(
+            fcTL,
+            _CRC(crcTable, abi.encodePacked(fcTL),4)
+        );
+    }
+
+    function _fcTL(uint256[256] memory crcTable, uint256 _seqNum, uint256 _width, uint256 _height, uint256 offset, uint256 _time, uint8 dispose, uint8 blend) internal pure returns (bytes memory) {
+        require(dispose < 3 && dispose >= 0);
+        require(blend == 0 || blend == 1);
+
+        bytes memory fcTL = abi.encodePacked(
+            bytes4(0x00_00_00_1A),
+            'fcTL',
+            uint32(_seqNum),
+            uint32(_width-(offset*2)),
+            uint32(_height-(offset*2)),
+            uint32(offset),
+            uint32(offset),
+            uint16(_time),
+            uint16(100),
+            dispose,
+            blend
+        );
+
+        return bytes.concat(
+            fcTL,
+            _CRC(crcTable, abi.encodePacked(fcTL),4)
+        );
+    }
+
+    function _IDAT(uint256[256] memory crcTable, bytes memory pixels) internal pure returns (bytes memory) {
+        
+        bytes7 deflate = bytes7(
+            abi.encodePacked(
+                bytes2(0x7801),
+                pixels.length > 65535 ? bytes1(0x00) :  bytes1(0x01),
+                png.byte2lsb(uint16(pixels.length)),
+                ~png.byte2lsb(uint16(pixels.length))
+            )
+        );
+        
+        bytes memory IDAT = abi.encodePacked(uint32(pixels.length+11), 'IDAT', deflate, pixels, _adler32(pixels));
+
+        return bytes.concat(
+            IDAT,
+            _CRC(crcTable, abi.encodePacked(IDAT),4)
+        );
+    }
+
+    function _fdAT(uint256[256] memory crcTable, uint256 _seqNum, bytes memory pixels) internal pure returns (bytes memory) {
+
+        bytes7 deflate = bytes7(
+            abi.encodePacked(
+                bytes2(0x7801),
+                pixels.length > 65535 ? bytes1(0x00) :  bytes1(0x01),
+                png.byte2lsb(uint16(pixels.length)),
+                ~png.byte2lsb(uint16(pixels.length))
+            )
+        );
+
+        bytes memory fdAT = 
+            abi.encodePacked(
+                uint32((pixels.length)+15),
+                'fdAT',
+                uint32(_seqNum),
+                deflate,
+                pixels,
+                _adler32(pixels)
+            );
+
+        return bytes.concat(
+            fdAT,
+            _CRC(crcTable, abi.encodePacked(fdAT),4)
+        );
+    }
+
+    function _createAnimatedFrames(uint256[256] memory crcTable, uint256 _width, uint256 _height, uint256 _time, FRAME[] memory pixels) internal pure returns (bytes memory) {
+        require(pixels.length > 1, "APNG: error single frame");
+
+        bytes memory frames = bytes.concat(
+            _fcTL(crcTable, 0, _width, _height, 0, _time, uint8(0), uint8(1)),
+            _IDAT(crcTable, pixels[0].frame)
+        );
+
+        uint seq = 1;
+
+        unchecked{
+            for(uint256 i = 1; i<pixels.length; ++i) {
+                frames = bytes.concat(
+                    frames,
+                    _fcTL(crcTable, seq, _width, _height, 0, _time, uint8(2), uint8(1)),
+                    _fdAT(crcTable, seq+1, pixels[i].frame)
+                );
+                seq += 2;
+            }
+        }
+
+
+        return frames;                
+
+    }
+    
+    function rawAPNG(uint32 width, uint32 height, bytes3[] memory palette, FRAME[] memory pixels) internal pure returns (bytes memory) {
+
+        uint256[256] memory crcTable = calcCrcTable();
+
+        bytes memory plte = formatPalette(palette, false);
+
+        // Write IHDR
+        bytes21 header = bytes21(abi.encodePacked(
+                uint32(13),
+                'IHDR',
+                width,
+                height,
+                bytes5(0x0803000000)
+            )
+        );        
+
+/*
+        // Write tRNS
+        bytes memory tRNS = png._tRNS(
+            calculateBitDepth(palette.length),
+            plte.length
+            );
+            */
+
+        bytes memory frames = _createAnimatedFrames(crcTable, width, height, 35, pixels);
+
+        return abi.encodePacked(
+            bytes8(0x89504E470D0A1A0A),
+            header, 
+            _CRC(crcTable, abi.encodePacked(header),4),
+            _acTL(crcTable, pixels.length),
+            plte,
+            _CRC(crcTable, abi.encodePacked(plte),4),
+            //tRNS,
+            //_CRC(crcTable, abi.encodePacked(tRNS),4),
+            frames,
+            bytes12(0x0000000049454E44AE426082)
+        );
+    }
+    
+
     function encodedPNG(uint32 width, uint32 height, bytes3[] memory palette, bytes memory pixels, bool force8bit) internal pure returns (string memory) {
         return string.concat('data:image/png;base64,', base64encode(rawPNG(width, height, palette, pixels, force8bit)));
     }
 
+    function encodedPNG(uint32 width, uint32 height, bytes memory plte, bytes memory pixels, bool force8bit) internal pure returns (string memory) {
+        return string.concat('data:image/png;base64,', base64encode(rawPNG(width, height, plte, pixels, force8bit)));
+    }
 
-
-
-
+    function encodedAPNG(uint32 width, uint32 height, bytes3[] memory plte, FRAME[] memory pixels) internal pure returns (string memory) {
+        return string.concat('data:image/png;base64,', base64encode(rawAPNG(width, height, plte, pixels)));
+    }
 
     // @dev Does not check out of bounds
     function coordinatesToIndex(uint256 _x, uint256 _y, uint256 _width) internal pure returns (uint256 index) {
             index = _y * (_width + 1) + _x + 1;
 	}
 
-    
-
-    
-
-
-
-
-
-
-
-
     /////////////////////////// 
     /// Checksums
 
-    // need to check faster ways to do this
     function calcCrcTable() internal pure returns (uint256[256] memory crcTable) {
         uint256 c;
 
@@ -358,6 +582,5 @@ library png {
         return result;
     }
 
-
-
 }
+

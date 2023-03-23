@@ -3,5 +3,8 @@ src = 'src'
 out = 'out'
 libs = ['lib']
 etherscan_api_key="VVX41BW4M4AGGJY2VFHNQM4IJVJRRBT3I6"
+fs_permissions = [
+    { access = "read-write", path = "./test/output/"}
+]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
